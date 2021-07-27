@@ -76,6 +76,7 @@ public struct ReorderableSectionedList<HeaderView: View, ElementView: View, Head
 
     private let headerBuilder: (Header) -> HeaderView
     private let elementBuilder: (Element) -> ElementView
+    private let listBackgroundColor: Color
 
     public var body: some View {
         List {
@@ -92,6 +93,7 @@ public struct ReorderableSectionedList<HeaderView: View, ElementView: View, Head
                     elementBuilder(element)
                 }
             }.onMove(perform: selectionViewModel.move(indices:newoffset:))
+            .listRowBackground(listBackgroundColor)
         }.environment(\.editMode, .constant(.active))
     }
 
@@ -102,18 +104,36 @@ public struct ReorderableSectionedList<HeaderView: View, ElementView: View, Head
         return header
     }
 
-    public init(viewModel: ReorderableViewModel<Header, Element>, @ViewBuilder header: @escaping (Header) -> HeaderView, @ViewBuilder element: @escaping (Element) -> ElementView) {
+    public init(viewModel: ReorderableViewModel<Header, Element>,
+                listRowBackgroundColor: Color = .clear,
+                @ViewBuilder header: @escaping (Header) -> HeaderView,
+                @ViewBuilder element: @escaping (Element) -> ElementView) {
         self.headerBuilder = header
         self.elementBuilder = element
         self.selectionViewModel = viewModel
+        self.listBackgroundColor = listRowBackgroundColor
+
+        UITableView.appearance().separatorStyle = .none
+        UITableViewCell.appearance().backgroundColor = .clear
+        UITableViewCell.appearance()
+        UITableView.appearance().backgroundColor = .clear
     }
 }
 
 struct ReorderableSectionedList_Previews: PreviewProvider {
+
     static var previews: some View {
-        ReorderableSectionedList(viewModel: .init(sections: [
-            .init(header: "Aktiv", elements: ["A", "B", "C"]),
-            .init(header: "Nicht Aktiv", elements: ["D", "E", "F"]),
-        ]), header: { Text($0).foregroundColor(.blue)}, element: { Text($0).foregroundColor(.green) })
+        VStack {
+            ReorderableSectionedList(viewModel: .init(sections: [
+                .init(header: "Aktiv", elements: ["A", "B", "C"]),
+                .init(header: "Nicht Aktiv", elements: ["D", "E", "F"]),
+            ]), header: { Text($0)
+                .foregroundColor(.blue)
+            }, element: {
+                Text($0)
+                    .foregroundColor(.green)
+
+            })
+        }.background(Color.purple)
     }
 }
