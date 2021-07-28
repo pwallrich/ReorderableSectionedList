@@ -85,7 +85,6 @@ public struct ReorderableSectionedList<HeaderView: View, ElementView: View, Head
         Group {
             if #available(iOS 14.0, *) {
                 list
-                    .listStyle(SidebarListStyle())
             } else {
                 list
                     .introspectTableView { tableView in
@@ -109,20 +108,30 @@ public struct ReorderableSectionedList<HeaderView: View, ElementView: View, Head
             // Prevent to move to first position
             if let header = initialHeader  {
                 headerBuilder(header)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                    .listRowInsets(EdgeInsets())
+                    .background(listBackgroundColor)
             }
             ForEach(selectionViewModel.items.dropFirst()) { item in
-                switch item.item {
-                case .header(let header):
-                    headerBuilder(header)
-                        .moveDisabled(true)
+                Group {
+                    switch item.item {
+                    case .header(let header):
+                        headerBuilder(header)
+                            .moveDisabled(true)
 
-                case .element(let element):
-                    elementBuilder(element)
-                        .deleteDisabled(true)
-                        .introspectTableViewCell { cell in
-                            cell.shouldIndentWhileEditing = false
-                        }
+                    case .element(let element):
+                        elementBuilder(element)
+                            .deleteDisabled(true)
+                            .introspectTableViewCell { cell in
+                                cell.shouldIndentWhileEditing = false
+                            }
+
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .listRowInsets(EdgeInsets())
+                .background(listBackgroundColor)
+
             }
             .onDelete(perform: nil)
             .onMove(perform: selectionViewModel.move(indices:newoffset:))
@@ -151,19 +160,21 @@ struct ReorderableSectionedList_Previews: PreviewProvider {
 
     static var previews: some View {
 //        VStack {
-            ReorderableSectionedList(viewModel: .init(sections: [
-                .init(header: "Aktiv", elements: ["A", "B", "C"]),
-                .init(header: "Nicht Aktiv", elements: ["D", "E", "F"]),
-            ]), header: {
-                Text($0)
-                .foregroundColor(.blue)
-                .border(Color.red, width: 1)
-            }, element: {
-                Text($0)
-                    .foregroundColor(.green)
-                    .border(Color.red, width: 1)
-
-            })
+            ReorderableSectionedList(
+                viewModel: .init(sections: [
+                    .init(header: "Aktiv", elements: ["A", "B", "C"]),
+                    .init(header: "Nicht Aktiv", elements: ["D", "E", "F"]),
+                ]),
+                listRowBackgroundColor: .purple,
+                header: {
+                    Text($0)
+                        .foregroundColor(.blue)
+                        .border(Color.red, width: 1)
+                }, element: {
+                    Text($0)
+                        .foregroundColor(.green)
+                        .border(Color.red, width: 1)
+                })
 //        }
 //    .background(Color.purple)
 //        .preferredColorScheme(.dark)
