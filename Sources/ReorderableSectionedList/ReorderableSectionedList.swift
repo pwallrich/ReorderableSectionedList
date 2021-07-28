@@ -1,4 +1,5 @@
 import SwiftUI
+import Introspect
 
 public struct Section<Header, Element> {
     public let header: Header
@@ -20,6 +21,7 @@ struct Item<Header, Element>: Identifiable {
     let id: Int
 }
 
+@available(iOS 13.0, *)
 public class ReorderableViewModel<Header, Element>: ObservableObject {
     @Published private(set) var items: [Item<Header, Element>]
 
@@ -71,6 +73,7 @@ public class ReorderableViewModel<Header, Element>: ObservableObject {
     }
 }
 
+@available(iOS 13.0, *)
 public struct ReorderableSectionedList<HeaderView: View, ElementView: View, Header, Element>: View {
     @ObservedObject var selectionViewModel: ReorderableViewModel<Header, Element>
 
@@ -79,6 +82,29 @@ public struct ReorderableSectionedList<HeaderView: View, ElementView: View, Head
     private let listBackgroundColor: Color
 
     public var body: some View {
+        Group {
+            if #available(iOS 14.0, *) {
+                list
+                    .listStyle(SidebarListStyle())
+            } else {
+                list
+                    .introspectTableView { tableView in
+                        tableView.separatorStyle = .none
+                        tableView.separatorColor = .clear
+                    }
+            }
+        }
+        .environment(\.editMode, .constant(.active))
+    }
+
+    var initialHeader: Header? {
+        guard case .header(let header) = selectionViewModel.items.first?.item else {
+            return nil
+        }
+        return header
+    }
+
+    var list: some View {
         List {
             // Prevent to move to first position
             if let header = initialHeader  {
@@ -89,19 +115,19 @@ public struct ReorderableSectionedList<HeaderView: View, ElementView: View, Head
                 case .header(let header):
                     headerBuilder(header)
                         .moveDisabled(true)
+
                 case .element(let element):
                     elementBuilder(element)
+                        .deleteDisabled(true)
+                        .introspectTableViewCell { cell in
+                            cell.shouldIndentWhileEditing = false
+                        }
                 }
-            }.onMove(perform: selectionViewModel.move(indices:newoffset:))
+            }
+            .onDelete(perform: nil)
+            .onMove(perform: selectionViewModel.move(indices:newoffset:))
             .listRowBackground(listBackgroundColor)
-        }.environment(\.editMode, .constant(.active))
-    }
-
-    var initialHeader: Header? {
-        guard case .header(let header) = selectionViewModel.items.first?.item else {
-            return nil
         }
-        return header
     }
 
     public init(viewModel: ReorderableViewModel<Header, Element>,
@@ -113,27 +139,33 @@ public struct ReorderableSectionedList<HeaderView: View, ElementView: View, Head
         self.selectionViewModel = viewModel
         self.listBackgroundColor = listRowBackgroundColor
 
-        UITableView.appearance().separatorStyle = .none
+//        UITableViewCell.appearance()
+
         UITableViewCell.appearance().backgroundColor = .clear
-        UITableViewCell.appearance()
         UITableView.appearance().backgroundColor = .clear
     }
 }
 
+@available(iOS 13.0, *)
 struct ReorderableSectionedList_Previews: PreviewProvider {
 
     static var previews: some View {
-        VStack {
+//        VStack {
             ReorderableSectionedList(viewModel: .init(sections: [
                 .init(header: "Aktiv", elements: ["A", "B", "C"]),
                 .init(header: "Nicht Aktiv", elements: ["D", "E", "F"]),
-            ]), header: { Text($0)
+            ]), header: {
+                Text($0)
                 .foregroundColor(.blue)
+                .border(Color.red, width: 1)
             }, element: {
                 Text($0)
                     .foregroundColor(.green)
+                    .border(Color.red, width: 1)
 
             })
-        }.background(Color.purple)
+//        }
+//    .background(Color.purple)
+//        .preferredColorScheme(.dark)
     }
 }
